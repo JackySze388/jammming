@@ -1,5 +1,5 @@
 const clientID = '1d2396acbcba4fbea2ef228e9cb81655';
-const redirectURI = 'http://localhost:3000/callback/';
+const redirectURI = 'https://jackysze388.github.io/jammming/';
 let accessToken;
 
 export const Spotify = {
