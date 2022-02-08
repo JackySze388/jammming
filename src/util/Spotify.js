@@ -1,39 +1,37 @@
 const clientID = '1d2396acbcba4fbea2ef228e9cb81655';
-const redirectURI = 'http://localhost:3000/'
+const redirectURI = 'http://localhost:3000/callback/';
 let accessToken;
 
-const Spotify = {
+export const Spotify = {
+
     getAccessToken() {
         if (accessToken) {
-            return accessToken;
+            return accessToken
         }
-
-        // check for an access token match - match() return an array with the values found
-        const accessTokenMatch = window.location.href.match(/access_token=([^&]*)/);
-        const expiresInMatch = window.location.href.match(/expires_in=([^&]*)/);
-
+        const accessTokenMatch = window.location.href.match(/access_token=([^&]*)/)
+        const expiresInMatch = window.location.href.match(/expires_in=([^&]*)/)
+        
         if (accessTokenMatch && expiresInMatch) {
-            accessToken = accessTokenMatch[1];
-            const expiresIn = Number(expiresInMatch[1]);
-
-            // this clears the parameters, allowing us to grab a new access token when it expires
+            accessToken = accessTokenMatch[1]
+            const expiresIn = Number(expiresInMatch[1])
+            
             window.setTimeout(() => accessToken = '', expiresIn * 1000);
             window.history.pushState('Access Token', null, '/');
             return accessToken;
         } else {
-            const accessUrl = `https://accounts.spotify.com/authorize?client_id=${clientID}&response_type=token&scope=playlist-modify-public&redirect_uri=${redirectURI}`;
-            window.location = accessUrl;
+            const accessURL = `https://accounts.spotify.com/authorize?client_id=${clientID}&response_type=token&scope=playlist-modify-public&redirect_uri=${redirectURI}`
+            window.location = accessURL;
         }
     },
 
     search(term) {
-        const accessToken = Spotify.getAccessToken();
+        const accessToken = Spotify.getAccessToken()
         return fetch(`https://api.spotify.com/v1/search?type=track&q=${term}`, {
             headers: {
                 Authorization: `Bearer ${accessToken}`
             }
         }).then(response => {
-            return response.json();
+            return response.json()
         }).then(jsonResponse => {
             if (!jsonResponse.tracks) {
                 return [];
@@ -44,12 +42,12 @@ const Spotify = {
                 artist: track.artists[0].name,
                 album: track.album.name,
                 uri: track.uri
-            }));
-        });
+            }))
+        })
     },
-
-    savePlaylist(name, trackUris) {
-        if (!name || !trackUris.length) {
+    
+    savePlayList(name, trackURIs) {
+        if(!name || !trackURIs.length) {
             return;
         }
 
@@ -57,26 +55,30 @@ const Spotify = {
         const headers = { Authorization: `Bearer ${accessToken}` };
         let userId;
 
-        return fetch(`https://api.spotify.com/v1/me`, {
-            headers: headers
+        return fetch(`https://api.spotify.com/v1/me`, { headers: headers
         }).then(response => response.json()
         ).then(jsonResponse => {
-            userId = jsonResponse.id
+            const userId = jsonResponse.id;
             return fetch(`https://api.spotify.com/v1/users/${userId}/playlists`, {
                 headers: headers,
                 method: "POST",
-                body: JSON.stringify({ name: name })
+                body: JSON.stringify({
+                    name: name
+                })
             }).then(response => response.json()
             ).then(jsonResponse => {
                 const playListId = jsonResponse.id;
                 return fetch(`https://api.spotify.com/v1/users/${userId}/playlists/${playListId}/tracks`, {
                     headers: headers,
                     method: "POST",
-                    body: JSON.stringify({ uris: trackUris })
+                    body: JSON.stringify({
+                        uris: trackURIs
+                    })
                 })
             })
         })
     }
+
 }
 
 export default Spotify;
